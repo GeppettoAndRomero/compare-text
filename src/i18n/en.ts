@@ -4,12 +4,12 @@ export const en: ToolContent = {
   htmlLang: 'en',
 
   meta: {
-    title: 'Compare Two Texts — Line Diff in Your Browser, No Upload | runlocally',
+    title: 'Compare Two Texts — Offline Line Diff, No Upload | runlocally',
     description:
-      'Paste two texts and see a line-by-line diff: added, removed, and unchanged lines highlighted, with a live +/- line count. Runs entirely in your browser. Nothing is uploaded.',
-    ogTitle: 'Compare Two Texts — Line Diff in Your Browser',
+      'Paste two texts and see a line-by-line diff — offline, entirely in your browser: added, removed, and unchanged lines highlighted, with a live +/- line count. Nothing is uploaded.',
+    ogTitle: 'Compare Two Texts — Offline Line Diff',
     ogDescription:
-      'Paste two texts and see a line-by-line diff, highlighted and counted, right in your browser. Nothing is uploaded.',
+      'Paste two texts and see a line-by-line diff, offline, right in your browser. Nothing is uploaded.',
   },
 
   hero: {
@@ -19,7 +19,7 @@ export const en: ToolContent = {
   },
 
   intro: {
-    h2: 'A line-by-line diff, entirely in your browser',
+    h2: 'A line-by-line text diff — fully offline, in your browser',
     paras: [
       "Paste an original and a changed version of any text — code, a contract, notes, a config file — and this tool highlights which lines were added, removed, or left unchanged. Comparison is line by line, not word or character by word or character, which keeps the result easy to scan for most everyday edits.",
       'There is a live count of lines added and removed, and a one-click copy of the full diff so you can paste it elsewhere — into a code review comment, an email, or your notes.',

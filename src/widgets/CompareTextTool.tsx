@@ -13,7 +13,9 @@
  */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'preact/hooks';
 import { AppCard } from './AppCard';
+import { AppModal } from './AppModal';
 import { ErrorToast } from './ErrorToast';
+import { FullscreenShell } from './FullscreenShell';
 import { computeDiff, formatUnifiedDiff, type DiffLineType } from '@/utils/diffEngine';
 import { isLargeText } from '@/utils/textSize';
 import { isAcceptedTextFile } from '@/utils/fileValidation';
@@ -50,6 +52,15 @@ export function CompareTextTool({ locale = 'en' }: CompareTextToolProps) {
   const [errorToasts, setErrorToasts] = useState<ErrorToastItem[]>([]);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Fullscreen editing session (#116, Tier 1). Like edit-markdown-table,
+  // this tool has no natural "nothing loaded yet" state (both panes are
+  // live, empty textareas from first render), so entering fullscreen is an
+  // explicit "Expand" action. Closing discards both texts (D4,
+  // editor/confirm-if-dirty) — "dirty" is simply hasContent, since there is
+  // no import-vs-edited distinction to track here.
+  const [expanded, setExpanded] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+
   const showErrorToast = useCallback((message: string) => {
     const id = `error-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     setErrorToasts((prev) => [...prev, { id, message }]);
@@ -82,6 +93,24 @@ export function CompareTextTool({ locale = 'en' }: CompareTextToolProps) {
     setOriginal('');
     setChanged('');
     setCopied(false);
+  };
+
+  // ---- fullscreen editing session (#116) --------------------------------
+
+  const requestCloseEditor = () => {
+    if (hasContent) setConfirmClose(true);
+    else setExpanded(false);
+  };
+
+  const handleRequestClose = () => {
+    if (confirmClose) setConfirmClose(false);
+    else requestCloseEditor();
+  };
+
+  const performCloseDiscard = () => {
+    handleClear();
+    setConfirmClose(false);
+    setExpanded(false);
   };
 
   const handleCopy = useCallback(async () => {
@@ -138,8 +167,11 @@ export function CompareTextTool({ locale = 'en' }: CompareTextToolProps) {
     .replace('{added}', String(diff.added))
     .replace('{removed}', String(diff.removed));
 
-  return (
-    <div>
+  // Both panes + toolbar + diff result — rendered inline in the normal
+  // column when not expanded, or as FullscreenShell's children when
+  // expanded (#116). Same JSX either way; only the wrapper differs.
+  const editorBody = (
+    <>
       <AppCard>
         <div class="ct-grid">
           <div class="ct-field">
@@ -185,6 +217,11 @@ export function CompareTextTool({ locale = 'en' }: CompareTextToolProps) {
             {summaryText}
           </span>
           <span class="ct-toolbar__actions">
+            {!expanded && (
+              <button type="button" id="expand-editor-action" class="app-button app-button--secondary" onClick={() => setExpanded(true)}>
+                {t.expandEditor}
+              </button>
+            )}
             <button
               type="button"
               id="clear-action"
@@ -231,6 +268,37 @@ export function CompareTextTool({ locale = 'en' }: CompareTextToolProps) {
           </>
         )}
       </AppCard>
+    </>
+  );
+
+  return (
+    <div>
+      {!expanded && editorBody}
+
+      {expanded && (
+        <FullscreenShell
+          open={expanded}
+          onRequestClose={handleRequestClose}
+          label={t.editorAria}
+          closeLabel={t.closeEditor}
+          testId="editor"
+          closeTestId="close-editor"
+        >
+          {editorBody}
+        </FullscreenShell>
+      )}
+
+      <AppModal isOpen={confirmClose} onClose={() => setConfirmClose(false)} title={t.closeConfirmTitle} locale={locale}>
+        <p>{t.closeConfirmBody}</p>
+        <div style="display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-4);">
+          <button type="button" class="app-button app-button--ghost" onClick={() => setConfirmClose(false)}>
+            {t.closeConfirmCancel}
+          </button>
+          <button id="confirm-close-editor-action" type="button" class="app-button app-button--primary" onClick={performCloseDiscard}>
+            {t.closeConfirmConfirm}
+          </button>
+        </div>
+      </AppModal>
 
       {errorToasts.length > 0 && (
         <div className="error-toast-container" aria-label={t.notificationsAria}>

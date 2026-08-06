@@ -39,4 +39,19 @@ test.describe('accessibility', () => {
     const blocking = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
     expect(blocking.map((v) => `${v.id} (${v.impact})`)).toEqual([]);
   });
+
+  test('has no serious or critical axe violations with the fullscreen editor expanded and a diff rendered (#116)', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/compare-text/');
+    await waitReady(page);
+    await page.locator('#expand-editor-action').click();
+    await page.locator('[data-testid="editor"]').waitFor({ state: 'visible' });
+    await runComparison(page);
+
+    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+    const blocking = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+    expect(blocking.map((v) => `${v.id} (${v.impact})`)).toEqual([]);
+  });
 });
